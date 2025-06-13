@@ -1,5 +1,7 @@
 const express = require("express");
+const cors = require("cors");
 const app = express();
+app.use(cors());
 app.use(express.json());
 const format = require("date-fns/format");
 const isValid = require("date-fns/isValid");
@@ -19,8 +21,8 @@ const initializeDBAndServer = async () => {
       filename: dbPath,
       driver: sqlite3.Database,
     });
-    app.listen(3000, () => {
-      console.log("Server is running at http:/localhost:3000/");
+    app.listen(3001, () => {
+      console.log("Server is running at http:/localhost:3001/");
     });
   } catch (e) {
     console.log(e.message);
@@ -107,6 +109,7 @@ const checkRequestsQueries = async (request, response, next) => {
 const checkRequestsBody = (request, response, next) => {
   const { id, todo, category, priority, status, dueDate } = request.body;
   const { todoId } = request.params;
+  console.log(todoId);
 
   if (category !== undefined) {
     categoryArray = ["WORK", "HOME", "LEARNING"];
@@ -176,6 +179,7 @@ const checkRequestsBody = (request, response, next) => {
 };
 
 //Get Todos API-1
+/*
 app.get("/todos/", checkRequestsQueries, async (request, response) => {
   const { status = "", search_q = "", priority = "", category = "" } = request;
   console.log(status, search_q, priority, category);
@@ -196,9 +200,9 @@ app.get("/todos/", checkRequestsQueries, async (request, response) => {
   const todosArray = await db.all(getTodosQuery);
   response.send(todosArray);
 });
-
+*/
 //
-app.get("/", async (request, response) => {
+app.get("/todos", async (request, response) => {
   //const { status = "", search_q = "", priority = "", category = "" } = request;
   //console.log(status, search_q, priority, category);
   console.log("all");
@@ -219,6 +223,7 @@ app.get("/", async (request, response) => {
 
 //
 //GET Todo API-2
+/*
 app.get("/todos/:todoId", checkRequestsQueries, async (request, response) => {
   const { todoId } = request;
 
@@ -238,6 +243,7 @@ app.get("/todos/:todoId", checkRequestsQueries, async (request, response) => {
   const todo = await db.get(getTodosQuery);
   response.send(todo);
 });
+*/
 
 //GET Agenda API-3
 app.get("/agenda/", checkRequestsQueries, async (request, response) => {
@@ -269,6 +275,7 @@ app.get("/agenda/", checkRequestsQueries, async (request, response) => {
 });
 
 //Add Todo API-4
+
 app.post("/todos/", checkRequestsBody, async (request, response) => {
   const { id, todo, category, priority, status, dueDate } = request;
 
@@ -291,6 +298,7 @@ app.post("/todos/", checkRequestsBody, async (request, response) => {
   response.send("Todo Successfully Added");
 });
 
+/*
 //Update Todo API-5
 app.put("/todos/:todoId/", checkRequestsBody, async (request, response) => {
   const { todoId } = request;
@@ -306,13 +314,14 @@ app.put("/todos/:todoId/", checkRequestsBody, async (request, response) => {
             UPDATE
                 todo
             SET 
-                status = '${status}'
+                status = '${status}', priority = '${priority}', todo = '${todo}', category = '${category}'
             WHERE 
                 id = ${todoId}     
         ;`;
       await db.run(updateTodoQuery);
       response.send("Status Updated");
-      break;
+    //break;
+
     case priority !== undefined:
       updateTodoQuery = `
             UPDATE
@@ -324,7 +333,8 @@ app.put("/todos/:todoId/", checkRequestsBody, async (request, response) => {
         ;`;
       await db.run(updateTodoQuery);
       response.send("Priority Updated");
-      break;
+    //break;
+
     case todo !== undefined:
       updateTodoQuery = `
             UPDATE
@@ -336,7 +346,8 @@ app.put("/todos/:todoId/", checkRequestsBody, async (request, response) => {
         ;`;
       await db.run(updateTodoQuery);
       response.send("Todo Updated");
-      break;
+    //break;
+
     case category !== undefined:
       const updateCategoryQuery = `
             UPDATE
@@ -348,7 +359,8 @@ app.put("/todos/:todoId/", checkRequestsBody, async (request, response) => {
         ;`;
       await db.run(updateCategoryQuery);
       response.send("Category Updated");
-      break;
+    //break;
+
     case dueDate !== undefined:
       const updateDateQuery = `
             UPDATE
@@ -362,6 +374,24 @@ app.put("/todos/:todoId/", checkRequestsBody, async (request, response) => {
       await db.run(updateDateQuery);
       response.send("Due Date Updated");
       break;
+  }
+});
+*/
+
+//
+app.put("/todos/:id", async (req, res) => {
+  const { id } = req.params;
+  const { todo, priority, status, category } = req.body;
+
+  try {
+    await db.run(
+      `UPDATE todo SET todo = ?, priority = ?, status = ?, category = ? WHERE id = ?`,
+      [todo, priority, status, category, id]
+    );
+    return res.status(200).send("Updated successfully");
+  } catch (error) {
+    console.error("PUT error:", error);
+    return res.status(500).send("Internal Server Error");
   }
 });
 
